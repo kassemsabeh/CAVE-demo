@@ -1,4 +1,3 @@
-from tkinter import image_names
 from attribute_extractor import AttributeExtractor
 from utils import create_example, display_result, read_examples, highlight_changes, get_changes, get_all_changes, highlight_all_changes
 from examples import EXAMPLES, TEXT_EXAMPLES
