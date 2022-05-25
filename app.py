@@ -1,9 +1,11 @@
 from attribute_extractor import AttributeExtractor
-from utils import create_example, display_result, read_examples, highlight_changes, get_changes, get_all_changes, highlight_all_changes
-from examples import EXAMPLES, TEXT_EXAMPLES
+from utils import create_example, display_result, read_examples, highlight_changes
+from utils import get_changes, get_all_changes, highlight_all_changes, extract_data
+from examples import EXAMPLES
 
 import json
 import os
+import requests
 from PIL import Image
 
 import streamlit as st
@@ -15,9 +17,8 @@ def load_model(model_ckpt):
     return AttributeExtractor(model_ckpt)
 
 
-
 def main():
-    data = read_examples('data/examples.jsonl')
+    prompts = list(EXAMPLES.keys()) + ["Custom"]
     st.set_page_config(
         layout='wide',
         page_title='Attributes in E-commerce: The good, The wrong and The ugly',
@@ -25,7 +26,7 @@ def main():
     )
 
     def _max_width_():
-        max_width_str = f"max-width: 1000px;"
+        max_width_str = f"max-width: 800px;"
         st.markdown(
             f"""
         <style>
@@ -50,98 +51,169 @@ def main():
             """
         )
 
-    st.markdown("## ⚙️ Models Configuration")
+    st.markdown("## ⚙️ Model Configuration")
 
-    c1, c2, c3, c4, c5, c6, c7, c8 = st.columns([2, 0.3, 2, 2, 0.3, 1, 1, 1])
-    with c1:
-        model = st.selectbox("Choose model", 
-        index=0, 
-        options=['DistilBERT', 'BERT', 'RoBERTa'],
-        help="At present, you can choose between 2 models (RoBERTa or DistilBERT) to embed your text. More to come!")
+    with st.container():
 
-    with c3:
-        num_results = st.slider(
-                'Number of outputs',
-                min_value=1,
-                max_value=5,
-                value=1,
-                help="""You can choose the number of predictions to display."""
-            )
-    
-    with c4:
-        null_score = st.slider(
-                'Minimum score',
-                min_value=0,
-                max_value=10,
-                value=10,
-                help="""You can set the sensitivity of the model to the error displays."""
-            )
+        c1, c2, c3, c4, c5, c6, c7, c8, c9 = st.columns([2, 0.3, 2, 2, 0.3, 1.5, 1.5, 1.5, 1.5])
+        with c1:
+            model = st.selectbox("Choose model", 
+            index=0, 
+            options=['DistilBERT', 'BERT', 'RoBERTa'],
+            help="At present, you can choose between 2 models (RoBERTa or DistilBERT) to embed your text. More to come!")
+
+        with c3:
+            num_results = st.slider(
+                    'Number of outputs',
+                    min_value=1,
+                    max_value=5,
+                    value=1,
+                    help="""You can choose the number of predictions to display."""
+                )
         
-    with c6:
-        correct = st.checkbox(
-                "Allow correction",
-                help="Tick this box if you want to allow the app to predict a substitute for wrong attributes."
+        with c4:
+            null_score = st.slider(
+                    'Minimum score',
+                    min_value=0,
+                    max_value=10,
+                    value=10,
+                    help="""You can set the sensitivity of the model to the error displays."""
+                )
+            
+        with c6:
+            correct = st.checkbox(
+                    "Allow correction",
+                    help="Tick this box if you want to allow the app to predict a substitute for wrong attributes."
+                )
+
+        with c7:
+            masked_language = st.checkbox(
+                    "Use language model",
+                    help="Tick this box if you want to use the models trained on a masked language task."
+                ) 
+
+        with c8:
+            generate_attributes = st.checkbox(
+                "Generate attributes",
+                help="Tick this box if you want the model to automatically extract new attributes."
             )
 
-    with c7:
-        masked_language = st.checkbox(
-                "Use language model",
-                help="Tick this box if you want to use the models trained on a masked language task."
-            ) 
-
-    with c8:
-        generate_attributes = st.checkbox(
-            "Generate attributes",
-            help="Tick this box if you want the model to automatically extract new attributes."
-        )
-
-
-    st.markdown("## 📌 An Example")
-
-    cl1, cl2 = st.columns([1, 1])
-
-    with cl1:
-        prompts = list(EXAMPLES.keys()) + ["Custom"]
-        prompt = st.selectbox(
-            'Examples (select from this list)',
-            prompts,
-            index=0,
-            help="At present, you can only choose between 4 examples. More to come!"
-        )
-
-        selected_example = EXAMPLES[prompt]
-        example = create_example(selected_example)
-        df = pd.DataFrame.from_dict(selected_example)
-        st.table(df)
+        with c9:
+            compare_products = st.checkbox(
+                "Compare products",
+                help='Tick this box if you want to compare between two products.'
+            )
     
-    with cl2:
-        st.markdown(TEXT_EXAMPLES[prompt])
-        image_name = 'data/' + prompt + '.jpg'
-        image = Image.open(image_name)
-        image = image.resize((500,400))
-        st.image(image)
-    
-    correct_button = st.button('✨ Correct the data!')
+    if compare_products:
+        st.markdown("## 📌 Compare Two Products")
+        with st.container():
+            col1, col_1, col2 = st.columns([1, 0.2, 1])
 
-    
-
-    if correct_button:
-        st.markdown("## 🎈 Check & download results")
-        with st.spinner("Correcting data..."):
-            if model == "DistilBERT":
-                model_ckpt = 'ksabeh/distilbert-attribute-correction'
-            else:
-                model_ckpt = 'ksabeh/distilbert-base-uncased-finetuned-attributes-qa'
+            with col1:
+                amazon_link = st.text_area('Insert a link for first product:')
+                if amazon_link:
+                        try:
+                            with st.spinner('Collecting data..'):
+                                raw_data_1 = extract_data(amazon_link)
+                        except:
+                            st.warning('Please input a valid link...')
+                            st.stop()
+                else:
+                    st.stop()
+                
+                selected_example_1 = {key: value for key, value in raw_data_1.items() if key in ['Attribute', 'Value']}
+                example_1 = create_example(selected_example_1)
+                df_1 = pd.DataFrame.from_dict(selected_example_1)
+                st.markdown(f"#### {raw_data_1['title']}")
+                st.markdown('')
+                image_url = raw_data_1['image']
+                image = Image.open(requests.get(image_url, stream=True).raw)
+                image = image.resize((400,300))
+                st.image(image)
+                st.table(df_1)
             
-            if masked_language:
-                model_ckpt += '-mlm'
-            
+            with col2:
+                amazon_link = st.text_area('Insert a link for the second product:')
+                if amazon_link:
+                        try:
+                            with st.spinner('Collecting data..'):
+                                raw_data_2 = extract_data(amazon_link)
+                        except:
+                            st.warning('Please input a valid link...')
+                            st.stop()
+                else:
+                    st.stop()
+                
+                selected_example_2 = {key: value for key, value in raw_data_2.items() if key in ['Attribute', 'Value']}
+                example_2 = create_example(selected_example_2)
+                df_2 = pd.DataFrame.from_dict(selected_example_2)
+                st.markdown(f"#### {raw_data_2['title']}")
+                st.markdown('')
+                image_url = raw_data_1['image']
+                image = Image.open(requests.get(image_url, stream=True).raw)
+                image = image.resize((500,400))
+                st.image(image)
+                st.table(df_2)
 
-            model = load_model(model_ckpt)
-            results = model.predict(example)
-            res_df = display_result(results, selected_example)
-            res_df = get_all_changes(df, res_df)
-            st.table(res_df.style.apply(highlight_all_changes, axis=None))
+
+    else:
+        st.markdown("## 📌 An Example")
+        with st.container():
+            cl1, cl_1, cl2, = st.columns([1, 0.2, 1])
+
+            with cl1:
+                prompt = st.selectbox(
+                    'Examples (select from this list)',
+                    prompts,
+                    index=0,
+                    help="At present, you can only choose between 4 examples. More to come!"
+                )
+                if prompt == 'Custom':
+                    amazon_link = st.text_area('Insert a valid amazon link here:')
+                    if amazon_link:
+                        try:
+                            with st.spinner('Collecting data..'):
+                                raw_data = extract_data(amazon_link)
+                        except:
+                            st.warning('Please input a valid link...')
+                            st.stop()
+                    else:
+                        st.stop()
+                else:
+                    raw_data = EXAMPLES[prompt]
+                selected_example = {key: value for key, value in raw_data.items() if key in ['Attribute', 'Value']}
+                example = create_example(selected_example)
+                df = pd.DataFrame.from_dict(selected_example)
+                st.table(df)
+            
+            with cl2:
+                st.markdown(f"#### {raw_data['title']}")
+                st.markdown('')
+                image_url = raw_data['image']
+                image = Image.open(requests.get(image_url, stream=True).raw)
+                image = image.resize((500,400))
+                st.image(image)
+            
+            correct_button = st.button(label='✨ Correct the data!')
+
+        
+            if correct_button:
+                st.markdown("## 🎈 Check & download results")
+                with st.spinner("Correcting data..."):
+                    if model == "DistilBERT":
+                        model_ckpt = 'ksabeh/distilbert-attribute-correction'
+                    else:
+                        model_ckpt = 'ksabeh/distilbert-base-uncased-finetuned-attributes-qa'
+                    
+                    if masked_language:
+                        model_ckpt += '-mlm'
+                    
+
+                    model = load_model(model_ckpt)
+                    results = model.predict(example)
+                    res_df = display_result(results, selected_example)
+                    res_df = get_all_changes(df, res_df)
+                    st.table(res_df.style.apply(highlight_all_changes, axis=None))
             
 
 

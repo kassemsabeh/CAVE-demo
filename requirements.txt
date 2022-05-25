@@ -3,3 +3,4 @@ pandas
 transformers
 datasets
 tensorflow
+selectorlib

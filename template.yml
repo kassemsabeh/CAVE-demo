@@ -1,0 +1,138 @@
+Info:
+    css: 'div#centerCol.centerColAlign'
+    xpath: null
+    type: Text
+    children:
+        Title:
+            css: span.a-size-large
+            xpath: null
+            type: Text
+        attr1:
+            css: 'tr.a-spacing-small:nth-of-type(1) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val1:
+            css: 'tr.a-spacing-small:nth-of-type(1) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr2:
+            css: 'tr.a-spacing-small:nth-of-type(2) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val2:
+            css: 'tr.a-spacing-small:nth-of-type(2) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr3:
+            css: 'tr.a-spacing-small:nth-of-type(3) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val3:
+            css: 'tr.a-spacing-small:nth-of-type(3) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr4:
+            css: 'tr.a-spacing-small:nth-of-type(4) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val4:
+            css: 'tr.a-spacing-small:nth-of-type(4) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr5:
+            css: 'tr.a-spacing-small:nth-of-type(5) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val5:
+            css: 'tr.a-spacing-small:nth-of-type(5) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr6:
+            css: 'tr.a-spacing-small:nth-of-type(6) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val6:
+            css: 'tr.a-spacing-small:nth-of-type(6) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr7:
+            css: 'tr.a-spacing-small:nth-of-type(7) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val7:
+            css: 'tr.a-spacing-small:nth-of-type(7) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr8:
+            css: 'tr.a-spacing-small:nth-of-type(8) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val8:
+            css: 'tr.a-spacing-small:nth-of-type(8) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+        attr9:
+            css: 'tr.a-spacing-small:nth-of-type(9) td.a-span3 span.a-size-base'
+            xpath: null
+            type: Text
+        val9:
+            css: 'tr.a-spacing-small:nth-of-type(9) td.a-span9 span.a-size-base'
+            xpath: null
+            type: Text
+Price:
+    css: 'span.a-price.a-size-medium span:nth-of-type(2)'
+    xpath: null
+    type: Text
+Image:
+    css: img.a-dynamic-image
+    xpath: null
+    type: Image
+asin:
+    css: 'li:nth-of-type(5) span:nth-of-type(2)'
+    xpath: null
+    type: Text
+bullet_points:
+    css: 'div.centerColAlign div.a-spacing-medium'
+    xpath: null
+    type: Text
+product_description:
+    css: 'div.a-section.a-spacing-extra-large div.a-row'
+    xpath: null
+    type: Text
+product_description1:
+    css: 'p span'
+    xpath: null
+    type: Text
+new_items:
+    css: 'div.celwidget.pd_rd_w-Q2tjz ol.a-carousel'
+    xpath: null
+    type: Text
+    children:
+        item1:
+            css: 'li.a-carousel-card:nth-of-type(1) div.p13n-sc-truncate-desktop-type2'
+            xpath: null
+            type: Text
+        item2:
+            css: 'li.a-carousel-card:nth-of-type(2) div.p13n-sc-truncate-desktop-type2'
+            xpath: null
+            type: Text
+        item3:
+            css: 'li.a-carousel-card:nth-of-type(3) div.p13n-sc-truncate-desktop-type2'
+            xpath: null
+            type: Text
+        item4:
+            css: 'li.a-carousel-card:nth-of-type(4) div.p13n-sc-truncate-desktop-type2'
+            xpath: null
+            type: Text
+product_details:
+    css: div.a-section.feature
+    xpath: null
+    type: Text
+brand_info:
+    css: 'p:nth-of-type(2) span'
+    xpath: null
+    type: Text
+important_information:
+    css: div.a-section.a-spacing-extra-large.bucket
+    xpath: null
+    type: Text
