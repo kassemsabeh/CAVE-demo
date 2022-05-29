@@ -18,6 +18,8 @@ class AttributeExtractor():
         self.min_null_score = 0
         return
     
+    def return_checkpoint(self):
+        return self.model_ckpt
     # Prepare tokenized example features
     def __prepare_example_features(self, examples: dict) -> dict:
         # Tokenize our examples with truncation and maybe padding, but keep the overflows using a stride. This results
