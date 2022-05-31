@@ -31,6 +31,7 @@ with st.expander("ℹ️ - About this app", expanded=True):
 
 _DISTILBERT = 'ksabeh/distilbert-attribute-correction'
 _BERT = 'ksabeh/distilbert-base-uncased-finetuned-attributes-qa'
+_ROBERTA = 'ksabeh/roberta-base-attribute-correction-qa'
 
 
 @st.cache(allow_output_mutation=True)
@@ -76,6 +77,8 @@ def data_from_link(amazon_link: str) -> dict:
 def choose_model(config: dict) -> AttributeExtractor:
     if  config['chosen_model'] == 'DistilBERT':
         model_ckpt = _DISTILBERT
+    elif config['chosen_model'] == 'RoBERTa':
+        model_ckpt = _ROBERTA
     else:
         model_ckpt = _BERT
     
