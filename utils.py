@@ -13,12 +13,35 @@ def create_example(data: dict) -> dict:
     example['id'] = list(range(n))
     return example
 
+def example_from_title(data: dict) -> dict:
+    example = {}
+    n = len(data['Attribute'])
+    example['question'] = data['Attribute']
+    example['context'] = [data['title']] * n
+    example['id'] = list(range(n))
+    return example
+
+def create_new_example(data: dict) -> dict:
+    example = {}
+    n = len(data['new_attributes'])
+    example['question'] = data['new_attributes']
+    example['context'] = [data['title']] * n
+    example['id'] = list(range(n))
+    return example
+
 # Takes result output by the model and input data, and generates a DataFrame table to visualize results
 def display_result(res: dict, data: dict) -> pd.DataFrame:
     new_data = {}
     new_data['Attribute'] = data['Attribute']
     new_data['Value'] = res.values()
     return pd.DataFrame(new_data)
+
+def display_new_result(res: dict, data:dict) -> pd.DataFrame:
+    new_data = {}
+    new_data['Attribute'] = data['new_attributes']
+    new_data['Value'] = res.values()
+    new_df = pd.DataFrame(new_data)
+    return new_df.loc[new_df['Value'] != '']
 
 def read_examples(file_name: str) -> list:
     data = []
@@ -56,7 +79,8 @@ def highlight_changes(x):
 
 def highlight_all_changes(x):
     r = f"background-color:red" 
-    b = f"background-color:green" 
+    b = f"color:green"
+    f = f'background-color:darkorange'
     #condition
     m = x["changes"] == 1
     n = x['changes'] == 2
@@ -64,7 +88,8 @@ def highlight_all_changes(x):
     df1 = pd.DataFrame('', index=x.index, columns=['Attribute', 'Value'])
     # set columns by condition
     df1.loc[m, 'Attribute'] = r
-    df1.loc[n, 'Attribute'] = b
+    df1.loc[n, 'Attribute'] = f
+    df1.loc[n, 'Value'] = b   
     x.drop(columns=['changes'], inplace=True)
     return df1
 

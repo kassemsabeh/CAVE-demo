@@ -1,13 +1,15 @@
 from attribute_extractor import AttributeExtractor
-from utils import create_example, display_result
-from utils import get_all_changes, highlight_all_changes, extract_data
+from utils import create_example, display_new_result, display_result, example_from_title, create_new_example
+from utils import get_all_changes, highlight_all_changes, extract_data, display_new_result
 from examples import EXAMPLES
 
 
 import requests
 from PIL import Image
+import re
 
 import streamlit as st
+from annotated_text import annotated_text
 import numpy as np
 import pandas as pd
 
@@ -31,7 +33,7 @@ with st.expander("ℹ️ - About this app", expanded=True):
 
 _DISTILBERT = 'ksabeh/distilbert-attribute-correction'
 _BERT = 'ksabeh/distilbert-base-uncased-finetuned-attributes-qa'
-_ROBERTA = 'ksabeh/roberta-base-attribute-correction-qa'
+_ROBERTA = 'ksabeh/roberta-base-attribute-correction'
 
 
 @st.cache(allow_output_mutation=True)
@@ -40,6 +42,19 @@ def load_model(model_ckpt: str) -> AttributeExtractor:
 
 def choose_example(raw_data: dict) -> dict:
     return {key: value for key, value in raw_data.items() if key in ['Attribute', 'Value']}
+
+def create_ner_list(result_df: pd.DataFrame, title: str) -> list:
+    my_title = title.replace(',', '')
+    my_title = my_title.replace('"', '')
+    title_list = my_title.split()
+    new_list = []
+    my_dict = dict(zip(result_df['Value'].tolist(), result_df['Attribute'].tolist()))
+    for element in title_list:
+        if element in my_dict.keys():
+            new_list.append((element, my_dict[element]))
+        else:
+            new_list.append(element + ' ')
+    return new_list
 
 def display_product(raw_data: dict) -> None:
     st.markdown(f"#### {raw_data['title']}")
@@ -50,12 +65,15 @@ def display_product(raw_data: dict) -> None:
     st.image(image)
 
 def data_from_prompt(raw_data: dict) -> dict:
+    title_example = example_from_title(raw_data)
+    new_example = create_new_example(raw_data)
     selected_example = choose_example(raw_data)
     example = create_example(selected_example)
     df = pd.DataFrame.from_dict(selected_example)
     display_product(raw_data)
     st.table(df)
-    return {'df': df, 'example': example, 'selected_example': selected_example, 'raw_data': raw_data}
+    return {'df': df, 'example': example, 'selected_example': selected_example,
+    'raw_data': raw_data, 'title_example': title_example, 'new_example': new_example}
 
 def data_from_link(amazon_link: str) -> dict:
     if amazon_link:
@@ -67,12 +85,14 @@ def data_from_link(amazon_link: str) -> dict:
             st.stop()
     else:
         st.stop()
+    title_example = example_from_title(raw_data)
     selected_example = choose_example(raw_data)
     example = create_example(selected_example)
     df = pd.DataFrame.from_dict(selected_example)
     display_product(raw_data)
     st.table(df)
-    return {'df': df, 'example': example, 'selected_example': selected_example, 'raw_data': raw_data}
+    return {'df': df, 'example': example, 'selected_example': selected_example, 
+    'raw_data': raw_data, 'title_example': title_example}
 
 def choose_model(config: dict) -> AttributeExtractor:
     if  config['chosen_model'] == 'DistilBERT':
@@ -84,13 +104,22 @@ def choose_model(config: dict) -> AttributeExtractor:
     
     if config['masked_language']:
         model_ckpt += '-mlm'
-    
-    return load_model(model_ckpt)
+
+    return load_model(model_ckpt), model_ckpt
 
 def get_results(model: AttributeExtractor, res: dict) -> pd.DataFrame:
     results = model.predict(res['example'])
     res_df = display_result(results, res['selected_example'])
     return get_all_changes(res['df'], res_df)
+
+def get_title_results(model: AttributeExtractor, res: dict) -> pd.DataFrame:
+    results = model.predict(res['title_example'])
+    res_df = display_result(results, res['selected_example'])
+    return get_all_changes(res['df'], res_df)
+
+def get_new_results(model: AttributeExtractor, res: dict) -> dict:
+    results = model.predict(res['new_example'])
+    return display_new_result(results, res['raw_data'])
 
 def compare_products(config: dict) -> None:
     with st.container():
@@ -137,7 +166,7 @@ def correct_products(config: dict) -> None:
             'Examples (select from this list)',
             prompts,
             index=0,
-            help='Chose an example from the list or input your own example'
+            help='Choose an example from the list or input your own example'
         )
 
         if prompt == 'Custom':
@@ -157,10 +186,23 @@ def correct_products(config: dict) -> None:
         if(submit):
             st.markdown("## 🎈 Check & download results")
             with st.spinner("Correcting data..."):
-                model = choose_model(config)
+                model, model_ckpt = choose_model(config)
                 st.text(f"Using model {model.return_checkpoint()}")
                 res_df = get_results(model, my_res)
                 st.table(res_df.style.apply(highlight_all_changes, axis=None))
+
+                st.markdown("## 🔍 Extracted from product title")
+                title_model = load_model(model_ckpt + '-titles')
+                res_title_df = get_title_results(title_model, my_res)
+                st.table(res_title_df.style.apply(highlight_all_changes, axis=None))
+                if (config['generate_attributes']):
+                    st.markdown("## 🤔 Extract new attributes")
+                    extracted_attributes = get_new_results(title_model, my_res)
+                    my_list = create_ner_list(extracted_attributes, raw_data['title'])
+                    annotated_text(*my_list)
+                    st.table(extracted_attributes)
+                    
+                
 
 def main():
     st.sidebar.markdown("## 💡 Mode")
@@ -178,6 +220,12 @@ def main():
         options=['DistilBERT', 'BERT', 'RoBERTa'],
         help="At present, you can choose between 2 models (RoBERTa or DistilBERT) to embed your text. More to come!")
     config['chosen_model'] = _CHOSEN_MODEL
+
+    _MASKED_LANGUAGE = st.sidebar.checkbox(
+        "Use language model",
+        help="Tick this box if you want to use the models trained on a masked language task."
+    )
+    config['masked_language'] = _MASKED_LANGUAGE
 
     _NUM_RES = st.sidebar.slider(
         'Number of outputs',
@@ -203,17 +251,17 @@ def main():
         )
     config['correct'] = _CORRECT
 
-    _MASKED_LANGUAGE = st.sidebar.checkbox(
-        "Use language model",
-        help="Tick this box if you want to use the models trained on a masked language task."
-    )
-    config['masked_language'] = _MASKED_LANGUAGE
-
     _GENERATE_ATTRIBUTES = st.sidebar.checkbox(
     "Generate attributes",
     help="Tick this box if you want the model to automatically extract new attributes."
     )
     config['generate_attributes'] = _GENERATE_ATTRIBUTES
+
+    _NORMALISE_ATTRIBUTES = st.sidebar.checkbox(
+    "Normalise attributes",
+    help="Tick this box if you want the model to automatically normalise the attributes."
+    )
+    config['normalise_attributes'] = _NORMALISE_ATTRIBUTES
 
     if _MODE == 'Compare products':
         compare_products(config)

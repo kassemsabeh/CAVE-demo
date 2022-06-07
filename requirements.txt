@@ -4,3 +4,4 @@ transformers
 datasets
 tensorflow
 selectorlib
+st-annotated-text
