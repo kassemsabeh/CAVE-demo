@@ -13,7 +13,7 @@ class AttributeExtractor():
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_ckpt)
         self.model = TFAutoModelForQuestionAnswering.from_pretrained(self.model_ckpt)
         self.negative = True
-        self.max_length = 384
+        self.max_length = 200
         self.doc_stride = 128
         self.min_null_score = 0
         return
@@ -181,8 +181,8 @@ class AttributeExtractor():
 
         return predictions
     
-    def predict(self, examples: dict, negative=True, min_null_score=5) -> dict:
-        self.min_null_score = 5
+    def predict(self, examples: dict, negative=True, min_null_score=0) -> dict:
+        self.min_null_score = min_null_score
         self.negative = negative
         dataset, features, tf_features = self.extract_features(examples)
         raw_predictions = self.model.predict(tf_features)

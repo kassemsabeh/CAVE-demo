@@ -5,3 +5,4 @@ datasets
 tensorflow
 selectorlib
 st-annotated-text
+textdistance
