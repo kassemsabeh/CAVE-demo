@@ -15,28 +15,13 @@ from annotated_text import annotated_text
 import numpy as np
 import pandas as pd
 
-prompts = list(EXAMPLES.keys()) + ["Custom"]
-st.set_page_config(
-    layout='wide',
-    page_title='CAVE: Correcting Attribute Values in E-commerce Profiles',
-    page_icon='🛒'
-)
-st.markdown("<h1 style='text-align: center; color: black;'>⛰️ CAVE: Correcting Attribute Values in E-commerce Profiles</h1>", unsafe_allow_html=True)
-
-
-with st.expander("ℹ️ - About this app", expanded=True):
-
-    st.write(
-        """     
--   The *BERT Keyword Extractor* app is an easy-to-use interface built in Streamlit for the amazing [KeyBERT](https://github.com/MaartenGr/KeyBERT) library from Maarten Grootendorst!
--   It uses a minimal keyword extraction technique that leverages multiple NLP embeddings and relies on [Transformers] (https://huggingface.co/transformers/) 🤗 to create keywords/keyphrases that are most similar to a document.
-        """
-        )
-
 _DISTILBERT = 'ksabeh/distilbert-attribute-correction'
 _BERT = 'ksabeh/bert-base-uncased-attribute-correction'
 _ROBERTA = 'ksabeh/roberta-base-attribute-correction'
+_ALBERT = 'ksabeh/albert-base-v2-attribute-correction'
+_XLNET = 'ksabeh/xlnet-base-cased-attribute-correction'
 
+prompts = list(EXAMPLES.keys())
 
 @st.cache(allow_output_mutation=True)
 def load_model(model_ckpt: str) -> AttributeExtractor:
@@ -94,6 +79,7 @@ def data_from_link(amazon_link: str) -> dict:
             st.stop()
     else:
         st.stop()
+    raw_data['new_attributes'] = ['Type']
     title_example = example_from_title(raw_data)
     selected_example = choose_example(raw_data)
     example = create_example(selected_example)
@@ -110,6 +96,10 @@ def choose_model(config: dict) -> AttributeExtractor:
         model_ckpt = _ROBERTA
     elif config['chosen_model'] == 'BERT':
         model_ckpt = _BERT
+    elif config['chosen_model'] == 'ALBERT':
+        model_ckpt = _ALBERT
+    elif config['chosen_model'] == 'XLNET':
+        model_ckpt = _XLNET
     
     if config['masked_language']:
         model_ckpt += '-mlm'
@@ -145,7 +135,29 @@ def get_new_results(model: AttributeExtractor, res: dict) -> dict:
 def convert_df(df):
    return df.to_csv().encode('utf-8')
 
+def submit_on_callback():
+    st.session_state.submit_clicked = True
+
+def submit_off_callback():
+    st.session_state.submit_clicked = False
+
+def submit_compare_on_callback():
+    st.session_state.compare_submit_clicked = True
+
+def use_mlm_callback():
+    st.session_state.mlm = True
+
+def new_link_callback():
+    st.session_state.new_link = True
+
+def submit_compare_off_callback():
+    st.session_state.compare_submit_clicked = False
+
+
 def compare_products(config: dict) -> None:
+    if 'compare_submit_clicked' not in st.session_state:
+        st.session_state.compare_submit_clicked = False
+
     attribute_data = load_data('resources/attributes.jsonl')
     with st.container():
         st.markdown("## 📌 Compare Two Products")
@@ -154,9 +166,10 @@ def compare_products(config: dict) -> None:
             prompt = st.selectbox(
             'Examples (select from this list)',
             prompts,
-            index=0,
+            index=9,
             help='Choose an example from the list or input your own example',
-            key='product_1'
+            key='product_1',
+            on_change=submit_compare_off_callback
             )
             if prompt == 'Custom':
                 amazon_link = st.text_area('Insert a link for the first product:')
@@ -167,7 +180,7 @@ def compare_products(config: dict) -> None:
                     st.table(st.session_state.res_1['df'])
                 my_res_1 = st.session_state.res_1
             else:
-                align_text()
+                # align_text()
                 raw_data_1 = EXAMPLES[prompt]
                 my_res_1 = data_from_prompt(raw_data_1)
         
@@ -175,7 +188,7 @@ def compare_products(config: dict) -> None:
             prompt = st.selectbox(
             'Examples (select from this list)',
             prompts,
-            index=0,
+            index=10,
             help='Choose an example from the list or input your own example',
             key='product_2  '
             )
@@ -189,30 +202,59 @@ def compare_products(config: dict) -> None:
                     st.table(st.session_state.res_2['df'])
                 my_res_2 = st.session_state.res_2
             else:
-                align_text()
+                # align_text()
                 raw_data_2 = EXAMPLES[prompt]
                 my_res_2 = data_from_prompt(raw_data_2)
-        submit = st.button('✨ Correct and compare data!')
+        submit = st.button('✨ Correct and compare data!', on_click=submit_compare_on_callback)
     with st.container():
-        if submit:
+        if st.session_state.compare_submit_clicked:
             st.markdown("## 🎈 Check & download results")
             with st.spinner("Correcting data..."):
                     model, _ = choose_model(config)
-                    st.text(f"Using model {model.return_checkpoint()}")
+                    # st.text(f"Using model {model.return_checkpoint()}")
                     res_df_1 = get_results(model, my_res_1, config)
                     res_df_2 = get_results(model, my_res_2, config)
 
+                    st.markdown("## Attribute correction")
                     col_1, _, col_2 = st.columns([1, 0.2, 1])
-
+                    
                     with col_1:
                         st.table(res_df_1.style.apply(highlight_all_changes, axis=None))
-                        attribute_normaliser = AttributeNormaliser(res_df_1, attribute_data)
-                        normalised_df = attribute_normaliser.normalise_attributes(threshold=config['threshold'])
-                        st.table(normalised_df)
+
                     with col_2:
                         st.table(res_df_2.style.apply(highlight_all_changes, axis=None))
 
+                    if config['normalise_attributes']:
+
+                        st.markdown("## Attribute normalisation")
+                        c1, _, c2 = st.columns([1, 0.2, 1])
+                        with c1:
+                            attribute_normaliser_1 = AttributeNormaliser(res_df_1, attribute_data)
+                            normalised_df_1 = attribute_normaliser_1.normalise_attributes(algorithm=config['simalirity_alg'], threshold=config['threshold'])
+                            st.table(normalised_df_1)
+                        with c2:
+                            attribute_normaliser_2 = AttributeNormaliser(res_df_2, attribute_data)
+                            normalised_df_2 = attribute_normaliser_2.normalise_attributes(algorithm=config['simalirity_alg'], threshold=config['threshold'])
+                            st.table(normalised_df_2)
+                        
+                        # st.markdown('## Attribute comparison')
+                        # res_df = pd.DataFrame.from_dict(RES)
+                        # st.table(res_df)
+                        # csv = convert_df(res_df)
+                        # st.download_button(
+                        # "📥 Download (.csv)",
+                        # csv,
+                        # f'comparison.csv',
+                        # "text/csv",
+                        # key='download_csv',
+                        # )
+
+
 def correct_products(config: dict) -> None:
+    if 'submit_clicked' not in st.session_state:
+        st.session_state.submit_clicked = False
+    if 'new_link' not in st.session_state:
+        st.session_state.new_link = True
     with st.container():
         st.markdown("## 📌 An Example")
         # cl1, _, cl2, = st.columns([1, 0.2, 1])
@@ -221,11 +263,13 @@ def correct_products(config: dict) -> None:
             'Examples (select from this list)',
             prompts,
             index=0,
-            help='Choose an example from the list or input your own example'
+            help='Choose an example from the list or input your own example',
+            key='select_example',
+            on_change=submit_off_callback
         )
 
         if prompt == 'Custom':
-            amazon_link = st.text_area('Insert a valid amazon link here:')
+            amazon_link = st.text_area('Insert a valid amazon link here:', key='amazon_link', on_change=new_link_callback())
             if 'res' not in st.session_state:
                 st.session_state.res = data_from_link(amazon_link)
             else:
@@ -235,15 +279,16 @@ def correct_products(config: dict) -> None:
         else:
             raw_data = EXAMPLES[prompt]
             my_res = data_from_prompt(raw_data)
-    
-    submit = st.button('✨ Correct data!')
+    model, model_ckpt = choose_model(config)
+    if config['use_title']:
+        title_model = load_model(model_ckpt + '-titles')
+    submit = st.button('✨ Correct data!', key='submit_button', on_click=submit_on_callback)
     with st.container():
-        if(submit):
+        if(st.session_state.submit_clicked):
             st.markdown("## 🎈 Check & download results")
             with st.spinner("Correcting data..."):
-                model, model_ckpt = choose_model(config)
-                title_model = load_model(model_ckpt + '-titles')
-                st.text(f"Using model {model.return_checkpoint()}")
+                
+                # st.text(f"Using model {model.return_checkpoint()}")
                 if config['use_title']:
                     c1, _, c2 = st.columns([1, 0.2, 1])
                     with c1:
@@ -275,8 +320,29 @@ def correct_products(config: dict) -> None:
                     csv,
                     f'{prompt}.csv',
                     "text/csv",
-                    key='download-csv'
+                    key='download_csv',
                     )
+                    
+
+st.set_page_config(
+    layout='wide',
+    page_title='CAVE: Correcting Attribute Values in E-commerce Profiles',
+    page_icon='🛒'
+)
+st.markdown("<h1 style='text-align: center; color: black;'>⛰️ CAVE: Correcting Attribute Values in E-commerce Profiles</h1>", unsafe_allow_html=True)
+
+
+with st.expander("ℹ️ - About this app", expanded=True):
+
+    st.write(
+        """     
+-   CAVE corrects attribute values by exploiting information from both titles and attribute tables.
+- It supplements the attribute tables with newly extracted attributes and their corresponding values.
+- It normalises product attributes to compare between product profiles.
+        """
+        )
+
+
                     
                 
 
@@ -293,14 +359,15 @@ def main():
 
     _CHOSEN_MODEL = st.sidebar.selectbox("Choose model", 
         index=0, 
-        options=['DistilBERT', 'BERT', 'RoBERTa'],
+        options=['DistilBERT', 'BERT', 'RoBERTa', 'ALBERT', 'XLNET'],
         help="At present, you can choose between 2 models (RoBERTa or DistilBERT) to embed your text. More to come!")
     config['chosen_model'] = _CHOSEN_MODEL
 
     _MASKED_LANGUAGE = st.sidebar.checkbox(
         "Use language model",
         help="Tick this box if you want to use the models trained on a masked language task.",
-        value= True
+        value= True,
+        key='mlm'
     )
     config['masked_language'] = _MASKED_LANGUAGE
 
@@ -332,7 +399,9 @@ def main():
 
     _USE_TITLES = st.sidebar.checkbox(
     "Use title",
-    help="Tick this box if you want the model to use the information in the title for correction."
+    help="Tick this box if you want the model to use the information in the title for correction.",
+    key='use_title',
+    on_change=use_mlm_callback
     )
     config['use_title'] = _USE_TITLES
 
@@ -358,7 +427,7 @@ def main():
     'Normalisation threshold',
     min_value=0.0,
     max_value=1.0,
-    value=0.9,
+    value=0.6,
     help="""You can set the threshold for the normalisation of the attributes."""
         )
     config['threshold'] = _NORM_THRESHOLD

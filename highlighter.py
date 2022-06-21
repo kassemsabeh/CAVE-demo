@@ -28,9 +28,9 @@ def highlight_changes(x):
     return df1
 
 def highlight_all_changes(x):
-    r = f"background-color:red" 
+    r = f"background-color:orange" 
     b = f"color:green"
-    f = f'background-color:darkorange'
+    f = f'background-color:yellow'
     #condition
     m = x["changes"] == 1
     n = x['changes'] == 2
