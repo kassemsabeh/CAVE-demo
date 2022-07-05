@@ -107,15 +107,8 @@ def choose_model(config: dict) -> AttributeExtractor:
     return load_model(model_ckpt), model_ckpt
 
 def align_text():
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
-    st.markdown('')
+    for _ in range(9):
+        st.markdown('')
     
 def get_results(model: AttributeExtractor, res: dict, config: dict) -> pd.DataFrame:
     results = model.predict(res['example'], negative= not config['correct'], min_null_score=config['null_score'])
