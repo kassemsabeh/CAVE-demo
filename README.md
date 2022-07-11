@@ -4,7 +4,7 @@ CAVE is a tool for attribute value correction and enrichment in E-commerce. Give
 CAVE relies on a Question-Answering system for the attribute value correction and extraction tasks. It learns information from both descriptions and attribute tables, using language encoder models to correct attribute values. For this purpose, CAVE is trained on datasets generated from the [Amazon Review Dataset](https://nijianmo.github.io/amazon/index.html).
 
 ## Installation
-Python 3 is required, and [streamlit](https://streamlit.io/):
+Python 3 is required, and [Streamlit](https://streamlit.io/):
 ```
 pip install streamlit
 ```
