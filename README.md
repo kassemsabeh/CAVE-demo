@@ -16,7 +16,7 @@ Please refer to `requirements.txt` for all relevent dependencies of the applicat
 ```
 streamlit run app.py
 ```
-The above command runs the pythin script `app.py` which is a [streamlit](https://streamlit.io/) web application. Now you can see CAVE web interface:
+The above command runs the python script `app.py` which is a [Streamlit](https://streamlit.io/) web application. Now you can see CAVE web interface:
 
 <center>
 <img src=".graphs/web_app.jpg" alt="drawing"/>
