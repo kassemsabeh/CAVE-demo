@@ -79,7 +79,7 @@ class AttributeExtractor():
             collate_fn=data_collator)
         return dataset, features, tf_features
 
-    # Function that postprocessed predictions by model
+    # Function that postprocesses predictions by model
     def postprocess_qa_predictions(self,
         examples,
         features,
@@ -102,7 +102,7 @@ class AttributeExtractor():
             f"Post-processing {len(examples)} example predictions split into {len(features)} features."
         )
 
-        # Let's loop over all the examples!
+        # Let's loop over all the examples.
         for example_index, example in enumerate(examples):
             # Those are the indices of the features associated to the current example.
             feature_indices = features_per_example[example_index]
@@ -170,7 +170,7 @@ class AttributeExtractor():
                 # failure.
                 best_answer = {"text": "", "score": 0.0}
 
-            # Let's pick our final answer: the best one or the null answer (only for squad_v2)
+            # Let's pick our final answer: the best one or the null answer (only for negative sets).
             if not self.negative:
                 predictions[example["id"]] = best_answer["text"]
             else:
@@ -181,6 +181,7 @@ class AttributeExtractor():
 
         return predictions
     
+    # Funtion to run the predictions and post-processing using the qa model.
     def predict(self, examples: dict, negative=True, min_null_score=0) -> dict:
         self.min_null_score = min_null_score
         self.negative = negative
