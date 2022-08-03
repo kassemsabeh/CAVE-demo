@@ -188,6 +188,10 @@ def use_mlm_callback():
 def new_link_callback():
     st.session_state.new_link = True
 
+def change_compare_example_callback():
+    st.session_state.compare_submit_clicked = False
+    st.session_state.update_results = True
+
 def submit_compare_off_callback():
     st.session_state.compare_submit_clicked = False
 
@@ -202,15 +206,19 @@ def reset_session_state_callback():
 def always_correct_callback():
     st.session_state.update_results = True
 
-
+################################################################################
 # Function for comparison mode of the application
 def compare_products(config: dict) -> None:
     if 'compare_submit_clicked' not in st.session_state:
         st.session_state.compare_submit_clicked = False
-
+    if 'update_results' not in st.session_state:
+        st.session_state.update_results = True
+    # Set CSS class
+    st.markdown(hide_dataframe_row_index, unsafe_allow_html=True)    
     attribute_data = load_data('resources/attributes.jsonl')
     with st.container():
         st.markdown("## 📌 Compare Two Products")
+        
         col1, _, col2 = st.columns([1, 0.2, 1])
         with col1:
             prompt = st.selectbox(
@@ -219,7 +227,7 @@ def compare_products(config: dict) -> None:
             index=9,
             help='Choose an example from the list or input your own example',
             key='product_1',
-            on_change=submit_compare_off_callback
+            on_change=change_compare_example_callback
             )
             if prompt == 'Custom':
                 amazon_link = st.text_area('Insert a link for the first product:')
@@ -240,7 +248,8 @@ def compare_products(config: dict) -> None:
             prompts,
             index=10,
             help='Choose an example from the list or input your own example',
-            key='product_2  '
+            key='product_2',
+            on_change=change_compare_example_callback
             )
 
             if prompt == 'Custom':
@@ -258,32 +267,33 @@ def compare_products(config: dict) -> None:
         submit = st.button('✨ Correct and compare data!', on_click=submit_compare_on_callback)
     with st.container():
         if st.session_state.compare_submit_clicked:
+
             st.markdown("## 🎈 Check & download results")
             with st.spinner("Correcting data..."):
                     model, _ = choose_model(config)
-                    # st.text(f"Using model {model.return_checkpoint()}")
-                    res_df_1 = get_results(model, my_res_1, config)
-                    res_df_2 = get_results(model, my_res_2, config)
+                    if st.session_state.update_results:
+                        st.session_state.res_df_1 = get_results(model, my_res_1, config)
+                        st.session_state.res_df_2 = get_results(model, my_res_2, config)
+                        st.session_state.update_results = False
 
                     st.markdown("## Attribute correction")
                     col_1, _, col_2 = st.columns([1, 0.2, 1])
                     
                     with col_1:
-                        st.table(res_df_1.style.apply(highlight_all_changes, axis=None))
+                        st.table(st.session_state.res_df_1.style.apply(highlight_all_changes, axis=None))
 
                     with col_2:
-                        st.table(res_df_2.style.apply(highlight_all_changes, axis=None))
-
+                        st.table(st.session_state.res_df_2.style.apply(highlight_all_changes, axis=None))
                     if config['normalise_attributes']:
 
                         st.markdown("## Attribute normalisation")
                         c1, _, c2 = st.columns([1, 0.2, 1])
                         with c1:
-                            attribute_normaliser_1 = AttributeNormaliser(res_df_1, attribute_data)
+                            attribute_normaliser_1 = AttributeNormaliser(st.session_state.res_df_1, attribute_data)
                             normalised_df_1 = attribute_normaliser_1.normalise_attributes(algorithm=config['simalirity_alg'], threshold=config['threshold'])
                             st.table(normalised_df_1)
                         with c2:
-                            attribute_normaliser_2 = AttributeNormaliser(res_df_2, attribute_data)
+                            attribute_normaliser_2 = AttributeNormaliser(st.session_state.res_df_2, attribute_data)
                             normalised_df_2 = attribute_normaliser_2.normalise_attributes(algorithm=config['simalirity_alg'], threshold=config['threshold'])
                             st.table(normalised_df_2)
                         
@@ -299,7 +309,7 @@ def compare_products(config: dict) -> None:
                         # key='download_csv',
                         # )
 
-##########################################################
+###########################################################################
 # Function for correction mode of the application
 def correct_products(config: dict) -> None:
     # Check if state variables are initialised
