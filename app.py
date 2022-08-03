@@ -218,10 +218,10 @@ def compare_products(config: dict) -> None:
     attribute_data = load_data('resources/attributes.jsonl')
     with st.container():
         st.markdown("## 📌 Compare Two Products")
-        
+
         col1, _, col2 = st.columns([1, 0.2, 1])
         with col1:
-            prompt = st.selectbox(
+            prompt_1 = st.selectbox(
             'Examples (select from this list)',
             prompts,
             index=9,
@@ -229,7 +229,7 @@ def compare_products(config: dict) -> None:
             key='product_1',
             on_change=change_compare_example_callback
             )
-            if prompt == 'Custom':
+            if prompt_1 == 'Custom':
                 amazon_link = st.text_area('Insert a link for the first product:')
                 if 'res_1' not in st.session_state:
                     st.session_state.res_1 = data_from_link(amazon_link)
@@ -239,11 +239,11 @@ def compare_products(config: dict) -> None:
                 my_res_1 = st.session_state.res_1
             else:
                 # align_text()
-                raw_data_1 = EXAMPLES[prompt]
+                raw_data_1 = EXAMPLES[prompt_1]
                 my_res_1 = data_from_prompt(raw_data_1)
         
         with col2:
-            prompt = st.selectbox(
+            prompt_2 = st.selectbox(
             'Examples (select from this list)',
             prompts,
             index=10,
@@ -252,7 +252,7 @@ def compare_products(config: dict) -> None:
             on_change=change_compare_example_callback
             )
 
-            if prompt == 'Custom':
+            if prompt_2 == 'Custom':
                 amazon_link = st.text_area('Insert a link for the second product:')
                 if 'res_2' not in st.session_state:
                     st.session_state.res_2 = data_from_link(amazon_link)
@@ -262,7 +262,7 @@ def compare_products(config: dict) -> None:
                 my_res_2 = st.session_state.res_2
             else:
                 # align_text()
-                raw_data_2 = EXAMPLES[prompt]
+                raw_data_2 = EXAMPLES[prompt_2]
                 my_res_2 = data_from_prompt(raw_data_2)
         submit = st.button('✨ Correct and compare data!', on_click=submit_compare_on_callback)
     with st.container():
@@ -297,17 +297,17 @@ def compare_products(config: dict) -> None:
                             normalised_df_2 = attribute_normaliser_2.normalise_attributes(algorithm=config['simalirity_alg'], threshold=config['threshold'])
                             st.table(normalised_df_2)
                         
-                        # st.markdown('## Attribute comparison')
-                        # res_df = pd.DataFrame.from_dict(RES)
-                        # st.table(res_df)
-                        # csv = convert_df(res_df)
-                        # st.download_button(
-                        # "📥 Download (.csv)",
-                        # csv,
-                        # f'comparison.csv',
-                        # "text/csv",
-                        # key='download_csv',
-                        # )
+                        st.markdown('## Attribute comparison')
+                        res_df = aggregate_normalised_tables(normalised_df_1, normalised_df_2, prompt_1, prompt_2)
+                        st.table(res_df)
+                        csv = convert_df(res_df)
+                        st.download_button(
+                        "📥 Download (.csv)",
+                        csv,
+                        f'comparison.csv',
+                        "text/csv",
+                        key='download_csv',
+                        )
 
 ###########################################################################
 # Function for correction mode of the application
