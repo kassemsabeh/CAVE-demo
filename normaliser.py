@@ -13,20 +13,23 @@ class AttributeNormaliser():
         self.data = data
         self.similarities = np.zeros((len(self.values), len(self.data)))
     
-    def token_similarity(self, algorithm: str) -> np.array:
+    def token_similarity(self) -> np.array:
             for i in range(len(self.values)):
                 for j in range(len(self.data)):
-                    self.similarities[i,j] = dst.cosine.similarity(self.values[i].lower(), self.data[j].lower())
+                    self.similarities[i,j] = self.similarity_function(self.values[i].lower(), self.data[j].lower())
             return self.similarities
     
     def most_similar_attributes(self, algorithm: str, threshold: float) -> dict:
         self.similar_attributes = {}
         if algorithm == 'Cosine similarity':
-            similarity = self.token_similarity('cosine')
+            self.similarity_function = dst.cosine.similarity
+            similarity = self.token_similarity()
         elif algorithm == 'Jaccard index':
-            similarity = self.token_similarity('jaccard')
+            self.similarity_function = dst.jaccard.similarity
+            similarity = self.token_similarity()
         elif algorithm == 'Sorensen–Dice coefficient':
-             similarity = self.token_similarity('sorensen')
+            self.similarity_function = dst.sorensen.similarity
+            similarity = self.token_similarity()
         for i in range(len(self.values)):
             max_value = max(similarity[i])
             if max_value >= threshold:
@@ -44,5 +47,5 @@ class AttributeNormaliser():
                 new_attr = similar_attributes[row['Attribute']]
             except:
                new_attr = row['Attribute']
-            list_of_lists.append([new_attr, row['Value']])
-        return pd.DataFrame(list_of_lists, columns=['Attribute', 'Value'])
+            list_of_lists.append([new_attr, row['Value'], row['Value']])
+        return pd.DataFrame(list_of_lists, columns=['Attribute', 'Value', 'dummy'])
