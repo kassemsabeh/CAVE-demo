@@ -40,5 +40,4 @@ def highlight_all_changes(x):
     df1.loc[m, 'Attribute'] = r
     df1.loc[n, 'Attribute'] = f
     df1.loc[n, 'Value'] = b   
-    x.drop(columns=['changes'], inplace=True)
     return df1

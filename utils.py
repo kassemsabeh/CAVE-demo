@@ -38,6 +38,7 @@ def display_new_result(res: dict, data:dict) -> pd.DataFrame:
     new_data = {}
     new_data['Attribute'] = data['new_attributes']
     new_data['Value'] = res.values()
+    new_data['dump'] = res.values()
     new_df = pd.DataFrame(new_data)
     return new_df.loc[new_df['Value'] != '']
 
