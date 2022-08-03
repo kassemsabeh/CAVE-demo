@@ -70,5 +70,12 @@ def combine_results(res_df1: pd.DataFrame, res_df2: pd.DataFrame ,new_df: pd.Dat
     my_df = pd.DataFrame(list_of_lists, columns=['Attribute', 'Value'])
     return pd.concat([my_df, new_df], ignore_index=True)
 
+# Function to aggregate tables after normalisation
+def aggregate_normalised_tables(df1: pd.DataFrame, df2: pd.DataFrame, col1: str, col2: str) -> pd.DataFrame:
+    result_df = pd.merge(df1.drop(columns='dummy'), df2.drop(columns='dummy'), on='Attribute', how='outer')
+    result_df['dummy'] = result_df['Attribute']
+    result_df.rename(columns={'Value_x': col1, 'Value_y': col2}, inplace=True)
+    return result_df
+
 
     
