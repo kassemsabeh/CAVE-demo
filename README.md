@@ -41,3 +41,26 @@ In this mode, the application is used to compare between two products. As above,
 </center
 
 For more information about using the application, please refer to the [video demonstration](https://bit.ly/3xW1W3E) of our system.
+
+------
+
+If you found this work useful, please cite it as follows:
+
+```
+@inproceedings{10.1145/3511808.3557161,
+author = {Sabeh, Kassem and Kacimi, Mouna and Gamper, Johann},
+title = {CAVE: Correcting Attribute Values in E-commerce Profiles},
+year = {2022},
+isbn = {9781450392365},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3511808.3557161},
+doi = {10.1145/3511808.3557161},
+booktitle = {Proceedings of the 31st ACM International Conference on Information \& Knowledge Management},
+pages = {4965–4969},
+numpages = {5},
+keywords = {question answering, data generation, attribute value extraction},
+location = {Atlanta, GA, USA},
+series = {CIKM '22}
+}
+```
